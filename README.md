@@ -8,6 +8,7 @@
 На странице реализован бесконечный слайдер с автоматическим переключением, а также анимированная горизонтальная полоса отсчета переключения. Добавлены навигационные кнопки для ручного изменения изображения.
 
 ![ChatGPT](https://img.shields.io/badge/chatGPT-74aa9c?style=for-the-badge&logo=openai&logoColor=white)
+
 Фотографии растений были обработаны ИИ-редактором изображений для адаптации размера, а так же для корректировки фона и улучшения читаемости контента.
 
 
@@ -38,6 +39,7 @@ Navigation buttons have been added for manually changing images.
 This design has also been made responsive so it works well on different screens.
 
 ![ChatGPT](https://img.shields.io/badge/chatGPT-74aa9c?style=for-the-badge&logo=openai&logoColor=white)
+
 The plant photos were processed by an AI image editor to resize, adjust the background, and improve the perception of the content.
 
 [View project](https://marimche.github.io/invasive-plants-layout/)
