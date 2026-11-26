@@ -4,13 +4,28 @@ let prev = document.getElementById('prev');
 let carousel = document.querySelector('.carousel');
 let carouselList = document.querySelector('.carousel .carousel__list');
 let thumbnailList = document.querySelector('.carousel .thumbnail__list');
+const progressBar = carousel.querySelector('.time');
+
+const slideDuration = 7000;
+let progressAnimation = null;
+let autoAdvanceTimer;
+let slideCycle = 0;
 
 const imageTransitionDuration = 500;
 let imageTransition = null;
 let thumbnailAnimations = [];
 let hasNavigated = false;
 
-// Одна фотография масштабируется равномерно; маска задаёт видимый прямоугольник.
+function updateSlideAccessibility() {
+  const activeSlide = carouselList.firstElementChild;
+
+  Array.from(carouselList.children).forEach(slide => {
+    const isActive = slide === activeSlide;
+    slide.toggleAttribute('inert', !isActive);
+    slide.setAttribute('aria-hidden', String(!isActive));
+  });
+}
+
 function getImageFrame(rect, containerRect, imageWidth, imageHeight, radius) {
   const scale = Math.max(rect.width / imageWidth, rect.height / imageHeight);
   const insetX = Math.max(0, (imageWidth - rect.width / scale) / 2);
@@ -49,7 +64,6 @@ function animateImage(image, firstRect, lastRect, firstRadius, lastRadius) {
       lastRect.width <= 0 || lastRect.height <= 0 ||
       !CSS.supports('clip-path', 'inset(0)')) return;
 
-  // Наибольший прямоугольник определяет разрешение временного слоя.
   const coverScale = Math.max(
     firstRect.width / image.naturalWidth,
     firstRect.height / image.naturalHeight,
@@ -87,7 +101,6 @@ function animateImage(image, firstRect, lastRect, firstRadius, lastRadius) {
 }
 
 function animateThumbnails(previousRects, movedThumbnail) {
-  // Сначала все измерения, затем запуск анимаций — без чтения раскладки в кадрах.
   const thumbnails = Array.from(thumbnailList.children);
   const currentRects = thumbnails.map(item => item.getBoundingClientRect());
 
@@ -110,32 +123,54 @@ function animateThumbnails(previousRects, movedThumbnail) {
   });
 }
 
+function restartSlideCycle() {
+  const cycle = ++slideCycle;
+  clearTimeout(autoAdvanceTimer);
+
+  if (progressAnimation) {
+    progressAnimation.onfinish = null;
+    progressAnimation.cancel();
+    progressAnimation = null;
+  }
+
+  const advanceSlide = () => {
+    if (cycle === slideCycle) showSlider('next');
+  };
+
+  if (progressBar && typeof progressBar.animate === 'function') {
+    progressAnimation = progressBar.animate([
+      { transform: 'scaleX(0)' },
+      { transform: 'scaleX(1)' },
+    ], {
+      duration: slideDuration,
+      easing: 'linear',
+      fill: 'forwards',
+    });
+    // Завершение полосы запускает следующий слайд
+    progressAnimation.onfinish = advanceSlide;
+  } else {
+    autoAdvanceTimer = setTimeout(advanceSlide, slideDuration);
+  }
+}
+
 next.onclick = function() {
-  carousel.classList.remove('current');
   showSlider('next');
 }
 
 prev.onclick = function() {
-  carousel.classList.remove('current');
   showSlider('prev');
 }
-
-// для автопереключения  
-let timeOutoNext = 7000;
-let runAutoRun = setTimeout(() => {
-  next.click();
-}, timeOutoNext);
-carousel.classList.add('current');
-
-// для линии тайминга
-let timeProgressNext = 6990;
-let timeProgress = setTimeout(() => {
-    carousel.classList.remove('current');
-  }, timeProgressNext);
 
 // таймаут доступности переключения
 let timeRunning = 2000;
 let runTimeOut;
+
+function scheduleArrowUnlock() {
+  clearTimeout(runTimeOut);
+  runTimeOut = setTimeout(() => {
+    carousel.classList.remove('next', 'prev');
+  }, timeRunning);
+}
 
 function showSlider(type) {
   hasNavigated = true;
@@ -144,24 +179,29 @@ function showSlider(type) {
 
   let itemSlider = document.querySelectorAll('.carousel .carousel__list .carousel__item');
   let itemThumbnail = document.querySelectorAll('.carousel .thumbnail__list .thumbnail__item');
+
+  if (itemSlider[0].contains(document.activeElement)) {
+    const navigationButton = type === 'prev' ? prev : next;
+    navigationButton.focus({ preventScroll: true });
+  }
+
   const outgoingImage = itemSlider[0].querySelector('img');
   const previousRects = new Map(Array.from(itemThumbnail, item => [item, item.getBoundingClientRect()]));
   const movedThumbnail = type === 'next' ? itemThumbnail[0] : itemThumbnail[itemThumbnail.length - 1];
   carousel.classList.remove('next', 'prev');
 
   if (type === 'next') {
-    // элементы в конец списков
     carouselList.appendChild(itemSlider[0]);
     thumbnailList.appendChild(itemThumbnail[0]);
     carousel.classList.add('next');
-    carousel.classList.add('current');
   } else {
     let positionLastItem = itemSlider.length - 1;
     carouselList.prepend(itemSlider[positionLastItem]);
     thumbnailList.prepend(itemThumbnail[positionLastItem]);
     carousel.classList.add('prev');
-    carousel.classList.add('current');
   }
+
+  updateSlideAccessibility();
 
   const incomingImage = carouselList.firstElementChild.querySelector('img');
   const thumbnail = thumbnailList.firstElementChild;
@@ -176,24 +216,11 @@ function showSlider(type) {
   }
   animateThumbnails(previousRects, movedThumbnail);
 
-  clearTimeout(runTimeOut);
-  runTimeOut = setTimeout(() => {
-    carousel.classList.remove('next');
-    carousel.classList.remove('prev');
-  }, timeRunning);
-
-  clearTimeout(runAutoRun);
-  runAutoRun = setTimeout(() => {
-    next.click();
-  }, timeOutoNext);
-
-  clearTimeout(timeProgress);
-  timeProgress = setTimeout(() => {
-    carousel.classList.remove('current');
-  }, timeProgressNext);
+  scheduleArrowUnlock();
+  restartSlideCycle();
 }
 
-// Начальное раскрытие сохраняется отдельно от намеренной блокировки стрелок.
+updateSlideAccessibility();
 const initialImage = carouselList.firstElementChild.querySelector('img');
 function animateInitialImage() {
   if (hasNavigated) return;
@@ -213,3 +240,6 @@ window.addEventListener('resize', () => {
   stopImageTransition();
   stopThumbnailAnimations();
 });
+
+restartSlideCycle();
+scheduleArrowUnlock();
