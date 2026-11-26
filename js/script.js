@@ -37,7 +37,7 @@ function showSlider(type) {
   let itemThumbnail = document.querySelectorAll('.carousel .thumbnail__list .thumbnail__item');
 
   if (type === 'next') {
-    // перемещаем элементы в конец списков
+    // элементы в конец списков
     carouselList.appendChild(itemSlider[0]);
     thumbnailList.appendChild(itemThumbnail[0]);
     carousel.classList.add('next');
@@ -50,7 +50,7 @@ function showSlider(type) {
     carousel.classList.add('current');
   }
 
-  clearTimeout(timeRunning); //очищаем идентификатор для предотвращения дублирования и наложения задач
+  clearTimeout(runTimeOut);
   runTimeOut = setTimeout(() => {
     carousel.classList.remove('next');
     carousel.classList.remove('prev');
