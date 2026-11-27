@@ -184,19 +184,15 @@ header .header__dropdown:hover .header__dropdown-content {
 	width: 40px;
 	height: 40px;
 	border-radius: 50%;
-	background-color: #eee4;
-	color: #fff;
+	background-color: #eee;
+	color: #555;
 	border: none;
 	font-family: monospace;
 	font-weight: bold;
 	font-size: large;
-	transition: 0.5s;
+	cursor: pointer;
+	transition: background-color 0.5s, color 0.5s;
 	z-index: 100;
-}
-
-.arrows button:hover {
-	background-color: #eee;
-	color: #555;
 }
 
 /* при загрузке показываем первый слайд */
@@ -282,6 +278,8 @@ header .header__dropdown:hover .header__dropdown-content {
 
 .carousel.next .arrows button,
 .carousel.prev .arrows button {
+	background-color: #eee4;
+	color: #fff;
 	pointer-events: none;
 }
 
